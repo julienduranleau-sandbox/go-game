@@ -50,6 +50,122 @@ class Board {
         this.renderer.redraw()
     }
 
+    solve() {
+        let areas = []
+
+        for (let row = 0; row < this.size.h; row++) {
+            for (let col = 0; col < this.size.w; col++) {
+                if (this.grid[row][col] === this.EMPTY) {
+                    let alreadyParsed = false
+
+                    for (let area of areas) {
+                        if (area.positions.includes(`${col},${row}`)) {
+                            alreadyParsed = true
+                            break
+                        }
+                    }
+
+                    if (!alreadyParsed) {
+                        areas.push({
+                            color: this.EMPTY,
+                            positions: this.findEmptyAreaAround(col, row)
+                        })
+                    }
+                }
+            }
+        }
+
+        for (let area of areas) {
+            this.solveArea(area)
+        }
+
+        this.renderer.solvedAreas = areas
+        this.renderer.redraw()
+    }
+
+    solveArea(area) {
+        let whiteSurrounding = false
+        let blackSurrounding = false
+
+        for (let positionStr of area.positions) {
+            let [col, row] = positionStr.split(',').map(Number)
+
+            if (
+                col > 0 && this.grid[row][col - 1] === this.BLACK ||
+                col < this.size.w - 1 && this.grid[row][col + 1] === this.BLACK ||
+                row > 0 && this.grid[row - 1][col] === this.BLACK ||
+                row < this.size.h - 1 && this.grid[row + 1][col] === this.BLACK
+                ) {
+                blackSurrounding = true
+            }
+
+            if (
+                col > 0 && this.grid[row][col - 1] === this.WHITE ||
+                col < this.size.w - 1 && this.grid[row][col + 1] === this.WHITE ||
+                row > 0 && this.grid[row - 1][col] === this.WHITE ||
+                row < this.size.h - 1 && this.grid[row + 1][col] === this.WHITE
+                ) {
+                whiteSurrounding = true
+            }
+
+            if (whiteSurrounding && blackSurrounding) {
+                console.log('found both, break')
+                break
+            }
+        }
+
+        if (whiteSurrounding && ! blackSurrounding) {
+            console.log('set white')
+            area.color = this.WHITE
+        } else if (blackSurrounding && ! whiteSurrounding) {
+            console.log('set black')
+            area.color = this.BLACK
+        } else {
+            area.color = this.EMPTY
+            console.log('set unknown')
+        }
+    }
+
+    findEmptyAreaAround(col, row, stack) {
+        stack = stack || []
+        stack.push(`${col},${row}`)
+
+        let leftNeighbourStr = `${col - 1},${row}`
+        let rightNeighbourStr = `${col + 1},${row}`
+        let topNeighbourStr = `${col},${row - 1}`
+        let bottomNeighbourStr = `${col},${row + 1}`
+
+        // left neighbour
+        if (col > 0 && ! stack.includes(leftNeighbourStr)) {
+            if (this.grid[row][col - 1] === this.EMPTY) {
+                this.findEmptyAreaAround(col - 1, row, stack)
+            }
+        }
+
+        // right neighbour
+        if (col < this.size.w - 1 && ! stack.includes(rightNeighbourStr)) {
+            if (this.grid[row][col + 1] === this.EMPTY) {
+                let a = this.findEmptyAreaAround(col + 1, row, stack)
+            }
+        }
+
+        // top neighbour
+        if (row > 0 && ! stack.includes(topNeighbourStr)) {
+            if (this.grid[row - 1][col] === this.EMPTY) {
+                this.findEmptyAreaAround(col, row - 1, stack)
+            }
+        }
+
+        // bottom neighbour
+        if (row < this.size.h - 1 && ! stack.includes(bottomNeighbourStr)) {
+            if (this.grid[row + 1][col] === this.EMPTY) {
+                this.findEmptyAreaAround(col, row + 1, stack)
+            }
+        }
+
+        return stack
+    }
+
     filterGrid() {
         let stonesToKill = []
 
@@ -97,7 +213,7 @@ class Board {
         }
 
         // right neighbour
-        if (col < this.size.w - 2 && ! skipLocations.includes(rightNeighbourStr)) {
+        if (col < this.size.w - 1 && ! skipLocations.includes(rightNeighbourStr)) {
             skipLocations.push(rightNeighbourStr)
             let neighbourColor = this.grid[row][col + 1]
 
@@ -121,7 +237,7 @@ class Board {
         }
 
         // bottom neighbour
-        if (row < this.size.h - 2 && ! skipLocations.includes(bottomNeighbourStr)) {
+        if (row < this.size.h - 1 && ! skipLocations.includes(bottomNeighbourStr)) {
             skipLocations.push(bottomNeighbourStr)
             let neighbourColor = this.grid[row + 1][col]
 

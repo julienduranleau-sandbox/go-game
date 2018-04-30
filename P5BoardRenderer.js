@@ -8,6 +8,7 @@ class P5BoardRenderer {
         this.bgImage = null
         this.bgImageLoaded = false
         this.drawParams = null
+        this.solvedAreas = null
         this.p5 = createCanvas(this.board.drawSize.w, this.board.drawSize.h)
 
         let maxWSqSize = (this.board.drawSize.w - padding * 2) / this.board.size.w
@@ -115,5 +116,41 @@ class P5BoardRenderer {
         this.drawBackground()
         this.drawGridMesh()
         this.drawStones()
+
+        if (this.solvedAreas) {
+            this.drawSolvedAreas()
+        }
+    }
+
+    drawSolvedAreas() {
+        for (let area of this.solvedAreas) {
+            for (let positionStr of area.positions) {
+                let [col, row] = positionStr.split(',').map(Number)
+
+                switch(area.color) {
+                    case this.board.EMPTY:
+                        noStroke()
+                        fill(0,100,255)
+                        break
+
+                    case this.board.WHITE:
+                        fill(255)
+                        stroke(0)
+                        strokeWeight(1)
+                        break
+
+                    case this.board.BLACK:
+                        fill(0)
+                        stroke(255)
+                        strokeWeight(1)
+                        break
+                }
+
+                let x = this.drawParams.paddingX + col * this.sqSize
+                let y = this.drawParams.paddingY + row * this.sqSize
+                let w = this.sqSize * 0.3
+                rect(x - w/2, y - w/2, w, w)
+            }
+        }
     }
 }
